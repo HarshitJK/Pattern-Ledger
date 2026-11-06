@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { SEED_PROBLEMS } from '../data/seed'
-import { DEFAULT_PLAN_START, SESSION_MIN } from '../lib/constants'
+import { todayStr } from '../lib/dates'
+import { SESSION_MIN } from '../lib/constants'
 import { applyRedo } from '../lib/redo'
 import { uid } from '../lib/id'
 import { CHECKLIST } from '../data/plan'
@@ -9,7 +9,7 @@ import type { Draft, Problem, SessionState, Settings } from './types'
 
 export type Theme = 'dark' | 'light'
 
-export const STORE_VERSION = 1
+export const STORE_VERSION = 2
 
 /** Everything that is saved to localStorage and exported as a JSON backup. */
 export interface Data {
@@ -45,20 +45,24 @@ interface Actions {
   dismissWelcome: (today: string) => void
   replaceAll: (data: Partial<Data>) => void
   resetAll: () => void
+  restartPlan: () => void
 }
 
 export type Store = Data & Actions
 
+/** The old default plan-start date that shipped with the seed data. */
+const LEGACY_PLAN_START = '2026-08-03'
+
 const initial = (): Data => ({
-  problems: SEED_PROBLEMS,
-  planStart: DEFAULT_PLAN_START,
+  problems: [],
+  planStart: todayStr(),
   theme: 'dark',
   settings: { reminderOn: false, reminderTime: '19:00', lastNotifiedOn: '' },
   roadmapChecked: {},
   reflections: {},
   session: null,
   draft: null,
-  importCardDismissed: false,
+  importCardDismissed: true,
   welcomeDismissedOn: '',
 })
 
@@ -75,10 +79,23 @@ const DATA_KEYS: (keyof Data)[] = [
   'welcomeDismissedOn',
 ]
 
-/** Placeholder for future schema changes: bump STORE_VERSION and branch on `version` here. */
+/** Migrate persisted state across schema versions. */
 function migrate(persisted: unknown, version: number): Data {
-  void version
-  return { ...initial(), ...(persisted as Partial<Data>) }
+  const base = { ...initial(), ...(persisted as Partial<Data>) }
+
+  // v1 → v2: replace the legacy seed plan-start with today so week 1 is correct.
+  if (version < 2) {
+    if (base.planStart === LEGACY_PLAN_START) {
+      base.planStart = todayStr()
+    }
+    // Also remove any seed problems that shipped with v1 (identified by their fixed ids).
+    const seedIds = new Set(['seed-1', 'seed-2', 'seed-3'])
+    base.problems = base.problems.filter((p) => !seedIds.has(p.id))
+    // importCardDismissed: if the user had the card, treat it as dismissed now.
+    base.importCardDismissed = true
+  }
+
+  return base
 }
 
 export const useStore = create<Store>()(
@@ -120,7 +137,19 @@ export const useStore = create<Store>()(
       dismissImportCard: () => set({ importCardDismissed: true }),
       dismissWelcome: (d) => set({ welcomeDismissedOn: d }),
       replaceAll: (data) => set(() => ({ ...initial(), ...data })),
-      resetAll: () => set({ ...initial(), problems: [], importCardDismissed: true }),
+      /** Wipe everything and start fresh at Week 1 today. Keeps theme. */
+      resetAll: () =>
+        set((s) => ({
+          ...initial(),
+          theme: s.theme,
+        })),
+      /** Keep problems; reset the plan to start today and clear roadmap + reflections. */
+      restartPlan: () =>
+        set((_s) => ({
+          planStart: todayStr(),
+          roadmapChecked: {},
+          reflections: {},
+        })),
     }),
     {
       name: 'pattern-ledger',

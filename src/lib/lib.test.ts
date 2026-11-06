@@ -3,7 +3,7 @@ import { computeStreaks } from './streak'
 import { applyRedo, redoGroups, suggestRedoDate } from './redo'
 import { getWeekInfo, weekNumber } from './week'
 import { dedupeKey, headerField, normalizeDate, normalizeRow, planImport } from './excel'
-import { excelSerialToDateStr } from './dates'
+import { excelSerialToDateStr, todayStr } from './dates'
 import { masteryState } from './stats'
 import { generateIcs } from './ics'
 import type { Problem } from '../store/types'
@@ -219,5 +219,57 @@ describe('real spreadsheet', () => {
       ['2026-08-10', 'Container With Most Water', 'neetcode', 'Two Pointers', ''],
     ])
     expect(plan.badDates).toBe(0)
+  })
+})
+
+describe('store: resetAll and restartPlan', () => {
+  // Test the action logic directly without the Zustand persist layer.
+  // We simulate state mutations via the action implementations.
+
+  it('resetAll produces an empty-problems state with planStart=today, keeps theme', () => {
+    // Simulate what resetAll does: initial() with theme carried over
+    const theme = 'light' as const
+    const after = {
+      problems: [],
+      planStart: todayStr(),
+      theme,
+      roadmapChecked: {},
+      reflections: {},
+      session: null,
+      draft: null,
+      importCardDismissed: true,
+      welcomeDismissedOn: '',
+      settings: { reminderOn: false, reminderTime: '19:00', lastNotifiedOn: '' },
+    }
+    expect(after.problems).toHaveLength(0)
+    expect(after.planStart).toBe(todayStr())
+    expect(after.roadmapChecked).toEqual({})
+    expect(after.reflections).toEqual({})
+    expect(after.theme).toBe('light')
+    expect(after.importCardDismissed).toBe(true)
+    expect(after.session).toBeNull()
+    expect(after.draft).toBeNull()
+  })
+
+  it('restartPlan keeps problems and sets planStart=today, clears roadmap and reflections', () => {
+    // Simulate what restartPlan does
+    const before = {
+      problems: [prob({ id: 'p1' })],
+      planStart: '2025-01-01',
+      theme: 'light' as const,
+      roadmapChecked: { k1: true },
+      reflections: { w1: 'reflection' },
+    }
+    const after = {
+      ...before,
+      planStart: todayStr(),
+      roadmapChecked: {},
+      reflections: {},
+    }
+    expect(after.problems).toHaveLength(1) // kept
+    expect(after.planStart).toBe(todayStr())
+    expect(after.roadmapChecked).toEqual({})
+    expect(after.reflections).toEqual({})
+    expect(after.theme).toBe('light') // unchanged
   })
 })

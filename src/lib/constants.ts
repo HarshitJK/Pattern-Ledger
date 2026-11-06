@@ -1,6 +1,5 @@
 export const GOAL_TOTAL = 150
 export const PLAN_WEEKS = 12
-export const DEFAULT_PLAN_START = '2026-08-03'
 export const REDO_AFTER_STUCK_DAYS = 3
 export const REDO_AFTER_CLEAN_DAYS = 14
 export const HINT_LOCK_MIN = 25
