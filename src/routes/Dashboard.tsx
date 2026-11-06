@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, FileSpreadsheet, Flame, X } from 'lucide-react'
+import { ArrowRight, Flame } from 'lucide-react'
 import { useStore } from '../store'
 import { useDerived } from '../hooks'
 import { CountUp, Item, Ring, Stagger } from '../components/Motion'
@@ -8,15 +8,12 @@ import { Heatmap, MistakeBars, PatternMap, Sparkline } from '../components/Chart
 import { GOAL_TOTAL, PLAN_WEEKS } from '../lib/constants'
 import { countsByDate, mistakeBreakdown, minutesPerWeek, patternStats } from '../lib/stats'
 import { pickQuote, pickSituation } from '../lib/motivation'
-import { targetLabel, weekRange } from '../lib/week'
-import { prettyDate } from '../lib/dates'
+import { targetLabel } from '../lib/week'
 
 export default function Dashboard() {
   const d = useDerived()
   const problems = useStore((s) => s.problems)
   const planStart = useStore((s) => s.planStart)
-  const importCardDismissed = useStore((s) => s.importCardDismissed)
-  const dismissImportCard = useStore((s) => s.dismissImportCard)
 
   const stats = useMemo(() => patternStats(problems), [problems])
   const counts = useMemo(() => countsByDate(problems), [problems])
@@ -43,44 +40,20 @@ export default function Dashboard() {
   )
 
   const { week, mission } = d
-  const heading = week.beforeStart
-    ? `Plan starts ${prettyDate(planStart)}`
-    : week.afterEnd
-      ? `Week ${week.week} - plan complete`
-      : `Week ${week.week} of ${PLAN_WEEKS}`
-  const sub = week.beforeStart ? 'Warm up' : week.afterEnd ? 'Keep the loop going' : week.phaseName
-  const range = weekRange(planStart, week.week)
+  // beforeStart is treated as Week 1 — never show a calendar date in the heading
+  const displayWeek = week.beforeStart ? 1 : week.week
+  const heading = week.afterEnd
+    ? `Week ${week.week} - plan complete`
+    : `Week ${displayWeek} of ${PLAN_WEEKS}`
+  const sub = week.afterEnd ? 'Keep the loop going' : week.phaseName
   const weekPct = Math.min(100, (d.weekCount / week.target.min) * 100)
   const hit = d.weekCount >= week.target.min
 
   return (
     <Stagger className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-      {!importCardDismissed && (
-        <Item className="lg:col-span-12">
-          <div className="card flex flex-wrap items-center justify-between gap-3 border-ice/50 p-4">
-            <div className="flex items-start gap-3">
-              <FileSpreadsheet className="mt-0.5 shrink-0 text-ice" size={22} aria-hidden="true" />
-              <p className="text-sm">
-                <span className="font-semibold">Showing the 3 problems from your spreadsheet.</span>{' '}
-                <span className="text-mute">Import the full Excel file to bring in everything else.</span>
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Link to="/settings#data" className="btn btn-sm">
-                Import Excel
-              </Link>
-              <button type="button" aria-label="Dismiss import suggestion" className="btn btn-sm !px-3" onClick={dismissImportCard}>
-                <X size={16} />
-              </button>
-            </div>
-          </div>
-        </Item>
-      )}
-
       <Item className="lg:col-span-8">
         <section className="card relative h-full overflow-hidden p-6 md:p-8">
           <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-lime/10 blur-3xl" aria-hidden="true" />
-          <p className="kicker">{prettyDate(range.start)} - {prettyDate(range.end)}</p>
           <h1 className="font-display mt-2 text-4xl font-extrabold leading-[1.05] md:text-6xl">
             {heading}
             <span className="text-lime"> · </span>

@@ -5,10 +5,8 @@ import { useDerived } from '../hooks'
 import { CountUp, Item, Stagger } from '../components/Motion'
 import { PageHeader } from '../components/Primitives'
 import { buildReview } from '../lib/review'
-import { prettyDate } from '../lib/dates'
 import { targetLabel } from '../lib/week'
 import { targetForWeek } from '../data/plan'
-
 function Stat({ label, children, tone = '' }: { label: string; children: React.ReactNode; tone?: string }) {
   return (
     <div className="card p-5">
@@ -44,9 +42,6 @@ export default function Review() {
             </button>
           </div>
         </PageHeader>
-        <p className="-mt-3 mb-5 font-mono text-xs text-mute">
-          {prettyDate(r.start)} - {prettyDate(r.end)}
-        </p>
       </Item>
 
       <Item className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">

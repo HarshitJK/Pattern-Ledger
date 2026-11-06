@@ -8,12 +8,10 @@ import { PageHeader } from '../components/Primitives'
 import { PHASES, PLAN } from '../data/plan'
 import { SIGNALS, STARTERS } from '../data/patterns'
 import { starterKey } from '../lib/mission'
-import { shortDate } from '../lib/dates'
-import { targetLabel, weekRange } from '../lib/week'
+import { targetLabel } from '../lib/week'
 
 export default function Roadmap() {
   const d = useDerived()
-  const planStart = useStore((s) => s.planStart)
   const checked = useStore((s) => s.roadmapChecked)
   const toggle = useStore((s) => s.toggleStarter)
   const reduce = useReducedMotion()
@@ -51,7 +49,6 @@ export default function Roadmap() {
             <ol className="relative ml-5 space-y-4 border-l border-line pl-6">
               {PLAN.filter((w) => w.phase === phase.id).map((w) => {
                 const isCurrent = w.week === currentWeek
-                const range = weekRange(planStart, w.week)
                 return (
                   <li key={w.week} className="relative">
                     <span
@@ -65,7 +62,7 @@ export default function Roadmap() {
                           {isCurrent && <span className="pill ml-3 !border-lime !text-lime">current</span>}
                         </h3>
                         <p className="font-mono text-xs text-mute">
-                          {shortDate(range.start)} - {shortDate(range.end)} · target {targetLabel(w.target)}
+                          target {targetLabel(w.target)}
                         </p>
                       </div>
                       {w.focus && <p className="mt-2 text-sm">{w.focus}</p>}
