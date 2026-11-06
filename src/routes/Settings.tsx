@@ -68,6 +68,7 @@ export default function Settings() {
   const [importError, setImportError] = useState('')
   const [pendingJson, setPendingJson] = useState<Partial<Data> | null>(null)
   const [resetOpen, setResetOpen] = useState(false)
+  const [restartOpen, setRestartOpen] = useState(false)
   const [perm, setPerm] = useState<NotificationPermission | 'unsupported'>(
     typeof Notification === 'undefined' ? 'unsupported' : Notification.permission,
   )
@@ -119,7 +120,7 @@ export default function Settings() {
 
       <Section title="Plan and appearance">
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Plan start date" hint="Week 1 begins here. Weekly targets and the heatmap align to it.">
+          <Field label="Plan start date" hint="Week 1 begins on this day. Move it to restart your 12-week plan from any date.">
             {(id, d) => (
               <input
                 id={id}
@@ -234,10 +235,20 @@ export default function Settings() {
             {importError}
           </p>
         )}
-        <div className="mt-6 border-t border-line pt-5">
-          <button type="button" className="btn hover:!border-ember hover:!text-ember" onClick={() => setResetOpen(true)}>
-            <RotateCcw size={16} /> Reset all data
-          </button>
+        <div className="mt-6 space-y-3 border-t border-line pt-5">
+          <p className="text-sm font-semibold">Reset</p>
+          <div className="flex flex-wrap gap-3">
+            <button type="button" className="btn hover:!border-lime hover:!text-lime" onClick={() => setRestartOpen(true)}>
+              <RotateCcw size={16} /> Restart plan (keep my problems)
+            </button>
+            <button type="button" className="btn hover:!border-ember hover:!text-ember" onClick={() => setResetOpen(true)}>
+              <RotateCcw size={16} /> Reset all data
+            </button>
+          </div>
+          <p className="text-xs text-mute">
+            "Restart plan" keeps your problems but sets Week 1 to today and clears roadmap and reflections.
+            "Reset all data" wipes everything and starts completely fresh.
+          </p>
         </div>
       </Section>
 
@@ -310,9 +321,31 @@ export default function Settings() {
         </div>
       </Dialog>
 
+      <Dialog open={restartOpen} onClose={() => setRestartOpen(false)} title="Restart plan from today?">
+        <p className="text-sm text-mute">
+          Week 1 will start today ({prettyDate(todayStr())}). Your {s.problems.length} logged problems are kept, but roadmap checkboxes and weekly reflections will be cleared.
+        </p>
+        <div className="mt-5 flex gap-3">
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => {
+              s.restartPlan()
+              setRestartOpen(false)
+              toast('Plan restarted — Week 1 starts today')
+            }}
+          >
+            Restart plan
+          </button>
+          <button type="button" className="btn" onClick={() => setRestartOpen(false)}>
+            Cancel
+          </button>
+        </div>
+      </Dialog>
+
       <Dialog open={resetOpen} onClose={() => setResetOpen(false)} title="Reset all data?">
         <p className="text-sm text-mute">
-          This permanently deletes all {s.problems.length} problems, redo history, reflections, checked roadmap items and settings from this browser. Export a backup first if you might want them back.
+          This permanently deletes all {s.problems.length} problems, redo history, reflections, checked roadmap items and settings from this browser. Week 1 will start today. Your theme is kept. Export a backup first if you might want your data back.
         </p>
         <div className="mt-5 flex gap-3">
           <button
@@ -321,7 +354,7 @@ export default function Settings() {
             onClick={() => {
               s.resetAll()
               setResetOpen(false)
-              toast('All data cleared')
+              toast('All data cleared — fresh start, Week 1 today')
             }}
           >
             Delete everything

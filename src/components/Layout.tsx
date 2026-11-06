@@ -158,6 +158,10 @@ export function Layout() {
             <span className={d.streak.current > 0 ? 'text-ember' : 'text-mute'}>{d.streak.current}-day streak</span>
           </div>
           <ThemeToggle className="w-full" />
+          <Link to="/settings#data" className="flex min-h-[36px] items-center gap-2 rounded-lg px-3 text-xs font-semibold text-mute transition-colors hover:bg-surface hover:text-ink">
+            <RotateCcw size={14} aria-hidden="true" />
+            Reset
+          </Link>
         </div>
       </aside>
 
